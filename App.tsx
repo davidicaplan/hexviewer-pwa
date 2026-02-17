@@ -303,6 +303,43 @@ const App: React.FC = () => {
     pdf.save(`${activeCollection.name}-palette.pdf`);
   };
 
+  const handleExportPalettes = () => {
+    const data = JSON.stringify(collections, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'hexviewer-palettes.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportPalettes = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const parsed = JSON.parse(ev.target?.result as string);
+          if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].id && parsed[0].name && parsed[0].colors) {
+            setCollections(parsed);
+            setActiveCollectionId(parsed[0].id);
+          } else {
+            alert('Invalid palette file format.');
+          }
+        } catch {
+          alert('Could not read file. Make sure it is a valid palette JSON.');
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  };
+
   const hasValidInput = useMemo(() => {
     return inputValue.split('\n').some(line => isValidHex(line.trim()));
   }, [inputValue]);
@@ -377,7 +414,7 @@ const App: React.FC = () => {
 
       </section>
 
-      <div className="w-full flex justify-center items-center gap-3 py-3 bg-gray-950 border-b border-white/5">
+      <div className="w-full flex justify-center items-center gap-3 py-3 bg-gray-950 border-b border-white/5 flex-wrap">
         <span className="bg-white/5 backdrop-blur-md px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase border border-white/10">
           {activeCollection?.name} • {selectedColors.length} / 12 Selected
         </span>
@@ -391,6 +428,20 @@ const App: React.FC = () => {
             Export PDF
           </button>
         )}
+        <button
+          onClick={handleExportPalettes}
+          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase transition-all active:scale-95"
+        >
+          <SaveIcon className="w-3.5 h-3.5" />
+          Save Palettes
+        </button>
+        <button
+          onClick={handleImportPalettes}
+          className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase transition-all active:scale-95 border border-white/10"
+        >
+          <UploadIcon className="w-3.5 h-3.5" />
+          Load Palettes
+        </button>
       </div>
 
       {/* 2. Collections Tabs (Sticky) */}
@@ -588,6 +639,12 @@ const XIcon = ({ className }: { className?: string }) => (
 );
 const DownloadIcon = ({ className }: { className?: string }) => (
   <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+);
+const SaveIcon = ({ className }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+);
+const UploadIcon = ({ className }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
 );
 
 export default App;
